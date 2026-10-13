@@ -1,0 +1,185 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  cryptoWeightedRandomDraw,
+  normalizeCardCode,
+  verifySingleCardServer,
+  verifyCardsBatchServer,
+  executeRedeemServer,
+  DEFAULT_PRIZE_TIERS,
+} from './serverLoyaltyEngine';
+import { LoyaltyPrizeTier } from '@/src/types/loyalty';
+
+describe('Server Loyalty Engine - Logic & Cryptographic Integrity', () => {
+  it('normalizes card codes correctly (strips whitespace, forces uppercase)', () => {
+    expect(normalizeCardCode('  tlq-200-112233  ')).toBe('TLQ-200-112233');
+    expect(normalizeCardCode('tlq 500 101010')).toBe('TLQ500101010');
+  });
+
+  describe('cryptoWeightedRandomDraw', () => {
+    it('returns a valid tier matching the configured options', () => {
+      const drawn = cryptoWeightedRandomDraw(DEFAULT_PRIZE_TIERS);
+      expect(DEFAULT_PRIZE_TIERS.map((t) => t.id)).toContain(drawn.id);
+    });
+
+    it('respects weights over multiple iterations (highest weight wins most frequently)', () => {
+      const mockTiers: LoyaltyPrizeTier[] = [
+        {
+          id: 'common',
+          name: 'كرت شائع',
+          price: 1000,
+          color: '#blue',
+          probabilityWeight: 90,
+          dataLabel: '1GB',
+          durationLabel: '6h',
+        },
+        {
+          id: 'rare',
+          name: 'كرت نادر',
+          price: 4000,
+          color: '#gold',
+          probabilityWeight: 10,
+          dataLabel: '30GB',
+          durationLabel: '30d',
+        },
+      ];
+
+      const counts: Record<string, number> = { common: 0, rare: 0 };
+      const trials = 500;
+
+      for (let i = 0; i < trials; i++) {
+        const tier = cryptoWeightedRandomDraw(mockTiers);
+        counts[tier.id] = (counts[tier.id] || 0) + 1;
+      }
+
+      // 90% common should be substantially higher than 10% rare
+      expect(counts.common).toBeGreaterThan(counts.rare!);
+      expect(counts.common).toBeGreaterThan(350);
+    });
+  });
+
+  describe('verifySingleCardServer', () => {
+    it('rejects empty or very short codes', async () => {
+      const res = await verifySingleCardServer('ab');
+      expect(res.valid).toBe(false);
+      expect(res.reason).toBe('invalid_format');
+    });
+
+    it('accepts registered exhausted network card', async () => {
+      const res = await verifySingleCardServer('TLQ-200-112233');
+      expect(res.valid).toBe(true);
+      expect(res.reason).toBe('valid');
+      expect(res.details?.price).toBe(200);
+    });
+
+    it('rejects unregistered unknown card', async () => {
+      const res = await verifySingleCardServer('FAKE-UNKNOWN-999999');
+      expect(res.valid).toBe(false);
+      expect(res.reason).toBe('not_found');
+    });
+  });
+
+  describe('verifyCardsBatchServer', () => {
+    it('rejects batch when less than 10 cards are provided', async () => {
+      const batch = ['TLQ-200-112233', 'TLQ-200-445566'];
+      const res = await verifyCardsBatchServer(batch);
+      expect(res.allValid).toBe(false);
+      expect(res.errorSummary).toContain('المسابقة تتطلب 10 كروت');
+    });
+
+    it('detects duplicate cards within the request batch', async () => {
+      const batch = [
+        'TLQ-200-112233',
+        'TLQ-200-112233', // Duplicate!
+        'TLQ-200-778899',
+        'TLQ-500-101010',
+        'TLQ-500-202020',
+        'TLQ-500-303030',
+        'TLQ-500-404040',
+        'TLQ-1000-505050',
+        'TLQ-1000-606060',
+        'TLQ-1000-707070',
+      ];
+      const res = await verifyCardsBatchServer(batch);
+      expect(res.allValid).toBe(false);
+      const dup = res.results.find((r) => r.reason === 'duplicate_in_request');
+      expect(dup).toBeDefined();
+    });
+
+    it('accepts 10 distinct, valid network cards', async () => {
+      const batch = [
+        'TLQ-200-112233',
+        'TLQ-200-445566',
+        'TLQ-200-778899',
+        'TLQ-500-101010',
+        'TLQ-500-202020',
+        'TLQ-500-303030',
+        'TLQ-500-404040',
+        'TLQ-1000-505050',
+        'TLQ-1000-606060',
+        'TLQ-1000-707070',
+      ];
+      const res = await verifyCardsBatchServer(batch);
+      expect(res.allValid).toBe(true);
+      expect(res.results.every((r) => r.valid)).toBe(true);
+    });
+  });
+
+  describe('executeRedeemServer & Idempotency', () => {
+    it('burns 10 cards, awards a legitimate prize, and replays idempotently', async () => {
+      const batch = [
+        'TLQ-200-808080',
+        'TLQ-200-909090',
+        'TLQ-500-111222',
+        'TLQ-500-333444',
+        'TLQ-500-555666',
+        'TLQ-1000-777888',
+        'TLQ-1000-999000',
+        'TLQ-500-123789',
+        'TLQ-500-456123',
+        'TLQ-4000-987654',
+      ];
+      const idempotencyKey = `test_idempotency_${Date.now()}`;
+
+      // 1. First redemption execution
+      const result1 = await executeRedeemServer({
+        cards: batch,
+        idempotencyKey,
+        clientId: 'test-client-1',
+      });
+
+      expect(result1.success).toBe(true);
+      if (result1.success) {
+        expect(result1.idempotentReplay).toBe(false);
+        expect(result1.wonVoucher.code).toBeDefined();
+        expect(result1.burnedCardsCount).toBe(10);
+        expect(result1.transactionId).toMatch(/^TLQ-TRX-/);
+      }
+
+      // 2. Immediate Replay with the same idempotency key (e.g. user retrying on slow network)
+      const result2 = await executeRedeemServer({
+        cards: batch,
+        idempotencyKey,
+        clientId: 'test-client-1',
+      });
+
+      expect(result2.success).toBe(true);
+      if (result1.success && result2.success) {
+        expect(result2.idempotentReplay).toBe(true);
+        expect(result2.transactionId).toBe(result1.transactionId);
+        expect(result2.wonVoucher.code).toBe(result1.wonVoucher.code);
+      }
+
+      // 3. Trying to burn the same cards with a NEW idempotency key MUST fail (already burned)
+      const result3 = await executeRedeemServer({
+        cards: batch,
+        idempotencyKey: `new_key_${Date.now()}`,
+        clientId: 'test-client-2',
+      });
+
+      expect(result3.success).toBe(false);
+      if (!result3.success) {
+        expect(result3.reason).toBe('invalid_cards');
+      }
+    });
+  });
+});

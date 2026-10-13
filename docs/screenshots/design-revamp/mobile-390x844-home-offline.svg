@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <!-- Orbit Background -->
+  <rect width="390" height="844" fill="#F4F6F8" />
+
+  <!-- Offline In-Flow Push Banner (Never overlaps header!) -->
+  <rect width="390" height="34" fill="#FFFBEB" />
+  <line x1="0" y1="34" x2="390" y2="34" stroke="#FDE68A" stroke-width="1" />
+  <circle cx="20" cy="17" r="3" fill="#B45309" />
+  <text x="32" y="21" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="10.5" fill="#7A4B00" font-weight="500">لا يوجد اتصال بالإنترنت — التصفح متاح بالبيانات المخزنة محلياً</text>
+
+  <!-- App Header (Pushed cleanly below banner) -->
+  <g transform="translate(0, 34)">
+    <rect width="390" height="60" fill="#F4F6F8" />
+    <line x1="0" y1="60" x2="390" y2="60" stroke="#E3E8EE" stroke-width="1" />
+
+    <!-- Logo & Offline Gray Dot -->
+    <circle cx="34" cy="30" r="16" fill="#0B1220" />
+    <circle cx="42" cy="24" r="2.5" fill="#C6F24E" />
+    <text x="60" y="27" font-family="'Readex Pro', sans-serif" font-size="15" font-weight="700" fill="#0B1220">طلقة نت</text>
+    <rect x="118" y="16" width="60" height="20" rx="10" fill="#FFFFFF" stroke="#E3E8EE" />
+    <circle cx="126" cy="26" r="3" fill="#94A3B8" />
+    <text x="134" y="29.5" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="10" fill="#5B6676" font-weight="500">أوفلاين</text>
+    <text x="60" y="42" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="10" fill="#5B6676">ستارلينك مأرب</text>
+
+    <!-- t.net button -->
+    <rect x="306" y="17" width="68" height="26" rx="13" fill="#FFFFFF" stroke="#E3E8EE" />
+    <text x="334" y="34" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="11" font-weight="500" fill="#0B1220" text-anchor="middle">t.net ↗</text>
+  </g>
+
+  <!-- Content remains fully visible below -->
+  <g transform="translate(0, 34)">
+    <!-- SignalRing Card -->
+    <rect x="16" y="74" width="358" height="250" rx="32" fill="#FFFFFF" stroke="#E3E8EE" />
+    <circle cx="195" cy="180" r="62" stroke="#E3E8EE" stroke-width="9" fill="none" />
+    <text x="195" y="174" font-family="'Readex Pro', sans-serif" font-size="16" font-weight="600" fill="#0B1220" text-anchor="middle">جاهز للقياس</text>
+    <text x="195" y="196" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="11" fill="#5B6676" text-anchor="middle">فحص بينج شبكة طلقة</text>
+    <rect x="100" y="278" width="190" height="34" rx="17" fill="#0B1220" />
+    <text x="195" y="299.5" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">ابدأ الفحص</text>
+  </g>
+
+  <!-- Floating Pill Bottom Nav -->
+  <rect x="35" y="768" width="320" height="50" rx="25" fill="#FFFFFF" stroke="#E3E8EE" filter="drop-shadow(0 12px 24px rgba(11,18,32,0.12))" />
+  <rect x="42" y="773" width="90" height="40" rx="20" fill="#C6F24E" />
+  <text x="87" y="798" font-family="'IBM Plex Sans Arabic', sans-serif" font-size="11.5" font-weight="700" fill="#0B1220" text-anchor="middle">⌂ الرئيسية</text>
+  <text x="162" y="798" font-family="sans-serif" font-size="16" fill="#5B6676" text-anchor="middle">☷</text>
+  <text x="217" y="798" font-family="sans-serif" font-size="16" fill="#5B6676" text-anchor="middle">▶</text>
+  <text x="272" y="798" font-family="sans-serif" font-size="16" fill="#5B6676" text-anchor="middle">⬚</text>
+  <text x="325" y="798" font-family="sans-serif" font-size="16" fill="#5B6676" text-anchor="middle">⋯</text>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="pwaGoldGrad" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#F5D061" />
+      <stop offset="50%" stopColor="#D4AF37" />
+      <stop offset="100%" stopColor="#B38212" />
+    </linearGradient>
+    <linearGradient id="pwaNetGrad" x1="64" y1="448" x2="448" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#38BDF8" />
+      <stop offset="100%" stopColor="#0284C7" />
+    </linearGradient>
+  </defs>
+
+  <!-- Premium Shield Container -->
+  <rect width="512" height="512" rx="128" fill="url(#pwaGoldGrad)" />
+
+  <!-- Outer Network Arc -->
+  <path d="M 96 320 A 192 192 0 1 1 432 208" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="28" stroke-linecap="round" fill="none" />
+
+  <!-- Middle Network Arc -->
+  <path d="M 144 288 A 136 136 0 1 1 384 192" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="24" stroke-linecap="round" fill="none" />
+
+  <!-- Supersonic Bullet / Letter "ط" Mast in Pure White -->
+  <path d="M 176 368 C 248 368 304 328 304 272 C 304 216 248 192 192 192 C 136 192 128 232 128 280 C 128 336 176 368 384 368" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M 192 192 L 192 80" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" />
+
+  <!-- Satellite Network Signal Beam Node -->
+  <circle cx="424" cy="208" r="32" fill="#FFFFFF" />
+  <circle cx="424" cy="208" r="14" fill="#0284C7" />
+</svg>

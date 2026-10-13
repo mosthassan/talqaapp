@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <rect width="390" height="844" fill="#F8F8F7"/>
+  <!-- Status Bar -->
+  <rect width="390" height="44" fill="#ffffff"/>
+  <text x="35" y="28" font-family="system-ui" font-size="12" font-weight="bold" fill="#1C1917">9:41</text>
+
+  <!-- Header -->
+  <rect y="44" width="390" height="60" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="360" y="78" font-family="system-ui" font-size="16" font-weight="bold" fill="#1C1917" text-anchor="end">خريطة نقاط التوزيع • مأرب</text>
+
+  <!-- Leaflet Map Simulation -->
+  <g transform="translate(20, 115)">
+    <rect width="350" height="280" rx="20" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- Streets -->
+    <path d="M 0,90 Q 150,110 350,70" stroke="#FFFFFF" stroke-width="8" fill="none"/>
+    <path d="M 120,0 L 140,280" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+    <path d="M 240,0 L 220,280" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+    <path d="M 0,200 L 350,180" stroke="#FFFFFF" stroke-width="7" fill="none"/>
+
+    <!-- Map Markers -->
+    <!-- Center Marker (Gold) -->
+    <circle cx="175" cy="130" r="14" fill="#C59424" stroke="#ffffff" stroke-width="3"/>
+    <text x="175" y="134" font-family="system-ui" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">★</text>
+    <!-- Cyan Marker -->
+    <circle cx="110" cy="80" r="12" fill="#0284C7" stroke="#ffffff" stroke-width="2.5"/>
+    <!-- Cyan Marker -->
+    <circle cx="260" cy="170" r="12" fill="#0284C7" stroke="#ffffff" stroke-width="2.5"/>
+    <!-- Cyan Marker -->
+    <circle cx="70" cy="220" r="12" fill="#0284C7" stroke="#ffffff" stroke-width="2.5"/>
+
+    <!-- Map Badge -->
+    <rect x="10" y="250" width="130" height="20" rx="5" fill="rgba(255,255,255,0.9)"/>
+    <text x="75" y="264" font-family="system-ui" font-size="9" fill="#57534E" text-anchor="middle">OpenStreetMap • مأرب</text>
+  </g>
+
+  <!-- Location sort pill -->
+  <rect x="20" y="410" width="350" height="40" rx="12" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="350" y="435" font-family="system-ui" font-size="11" fill="#57534E" text-anchor="end">مرتبة حسب الأقرب لموقعك في مأرب</text>
+  <rect x="30" y="418" width="70" height="24" rx="12" fill="#0284C7"/>
+  <text x="65" y="434" font-family="system-ui" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">تحديث</text>
+
+  <!-- Distributor Cards -->
+  <g transform="translate(20, 465)">
+    <!-- Card 1 -->
+    <rect width="350" height="90" rx="16" fill="#ffffff" stroke="#C59424" stroke-width="1.5"/>
+    <text x="330" y="490" font-family="system-ui" font-size="13" font-weight="bold" fill="#1C1917" text-anchor="end">مركز النجم للاتصالات والخدمات</text>
+    <rect x="30" y="475" width="55" height="18" rx="9" fill="#D1FAE5"/>
+    <text x="57" y="488" font-family="system-ui" font-size="9" font-weight="bold" fill="#065F46" text-anchor="middle">مفتوح الآن</text>
+    <text x="330" y="510" font-family="system-ui" font-size="11" fill="#57534E" text-anchor="end">شارع 26 سبتمبر الرئيسي، بجوار مجمع النور</text>
+    <text x="330" y="530" font-family="system-ui" font-size="10" fill="#78716C" text-anchor="end">الساعات: 8:00 ص – 12:00 م • يبعد 0.8 كم</text>
+
+    <!-- Card 2 -->
+    <rect y="105" width="350" height="90" rx="16" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+    <text x="330" y="595" font-family="system-ui" font-size="13" font-weight="bold" fill="#1C1917" text-anchor="end">سوبر ماركت البركة الحديث</text>
+    <rect x="30" y="580" width="70" height="18" rx="9" fill="#D1FAE5"/>
+    <text x="65" y="593" font-family="system-ui" font-size="9" font-weight="bold" fill="#065F46" text-anchor="middle">24 ساعة يومياً</text>
+    <text x="330" y="615" font-family="system-ui" font-size="11" fill="#57534E" text-anchor="end">شارع الأربعين، مقابل كلية التربية، مأرب</text>
+    <text x="330" y="635" font-family="system-ui" font-size="10" fill="#78716C" text-anchor="end">المسؤول: محمد سعيد العولقي • يبعد 1.4 كم</text>
+  </g>
+
+  <!-- Bottom Nav -->
+  <rect y="760" width="390" height="84" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="330" y="800" font-family="system-ui" font-size="10" fill="#78716C" text-anchor="middle">الرئيسية</text>
+  <text x="260" y="800" font-family="system-ui" font-size="10" font-weight="bold" fill="#C59424" text-anchor="middle">الباقات</text>
+  <text x="195" y="800" font-family="system-ui" font-size="10" fill="#78716C" text-anchor="middle">الاستراحة</text>
+  <text x="130" y="800" font-family="system-ui" font-size="10" fill="#78716C" text-anchor="middle">المباشر</text>
+  <text x="60" y="800" font-family="system-ui" font-size="10" fill="#78716C" text-anchor="middle">السرعة</text>
+</svg>

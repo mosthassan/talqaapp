@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800">
+  <rect width="1280" height="800" fill="#F8F8F7"/>
+
+  <!-- Desktop Header -->
+  <rect width="1280" height="80" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="1220" y="48" font-family="system-ui" font-size="22" font-weight="bold" fill="#1C1917" text-anchor="end">طلقة نت • عالمك المتصل</text>
+
+  <!-- Desktop Nav Links -->
+  <text x="800" y="48" font-family="system-ui" font-size="14" fill="#57534E">الرئيسية</text>
+  <text x="700" y="48" font-family="system-ui" font-size="14" fill="#57534E">الباقات والخريطة</text>
+  <text x="590" y="48" font-family="system-ui" font-size="14" font-weight="bold" fill="#C59424">الاستراحة (LAN)</text>
+  <text x="490" y="48" font-family="system-ui" font-size="14" fill="#57534E">البث المباشر HLS</text>
+  <text x="380" y="48" font-family="system-ui" font-size="14" fill="#57534E">فحص السرعة</text>
+  <text x="270" y="48" font-family="system-ui" font-size="14" fill="#57534E">المكافآت</text>
+
+  <!-- Main Container Grid -->
+  <g transform="translate(60, 110)">
+    <!-- Column 1: Lounge & Media Catalog (Width 560) -->
+    <rect width="560" height="630" rx="24" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+    <text x="530" y="40" font-family="system-ui" font-size="18" font-weight="bold" fill="#1C1917" text-anchor="end">استراحة طلقة نت • مكتبة Jellyfin</text>
+    <text x="530" y="65" font-family="system-ui" font-size="12" fill="#57534E" text-anchor="end">سيرفر الوسائط والتنزيلات المحلية السريعة (LAN)</text>
+
+    <!-- Card Jellyfin -->
+    <rect x="25" y="90" width="510" height="110" rx="16" fill="#FDF7E7" stroke="#EEDAA2" stroke-width="1"/>
+    <text x="510" y="125" font-family="system-ui" font-size="15" font-weight="bold" fill="#1C1917" text-anchor="end">سيرفر الأفلام والمسلسلات (Jellyfin)</text>
+    <text x="510" y="150" font-family="system-ui" font-size="11" fill="#57534E" text-anchor="end">مكتبة سينمائية بدقة فائقة وبدون استهلاك كرتك</text>
+    <rect x="45" y="145" width="90" height="30" rx="15" fill="#C59424"/>
+    <text x="90" y="165" font-family="system-ui" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">فتح السيرفر ↗</text>
+
+    <!-- Card APK -->
+    <rect x="25" y="215" width="510" height="95" rx="16" fill="#F8F8F7" stroke="#E7E5E4" stroke-width="1"/>
+    <text x="510" y="245" font-family="system-ui" font-size="14" font-weight="bold" fill="#1C1917" text-anchor="end">تطبيق طلقة نت الرسمي (APK)</text>
+    <text x="510" y="270" font-family="system-ui" font-size="11" fill="#57534E" text-anchor="end">حزمة التثبيت للأندرويد • الحجم 15.4 MB</text>
+    <rect x="45" y="250" width="90" height="30" rx="15" fill="#0284C7"/>
+    <text x="90" y="270" font-family="system-ui" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">تحميل مباشر</text>
+
+    <!-- Card PUBG -->
+    <rect x="25" y="325" width="510" height="95" rx="16" fill="#F8F8F7" stroke="#E7E5E4" stroke-width="1"/>
+    <text x="510" y="355" font-family="system-ui" font-size="14" font-weight="bold" fill="#1C1917" text-anchor="end">تحديث ببجي موبايل (PUBG Update)</text>
+    <text x="510" y="380" font-family="system-ui" font-size="11" fill="#57534E" text-anchor="end">ملف التحديث الأخير بسرعة قصوى • الحجم 745 MB</text>
+    <rect x="45" y="360" width="90" height="30" rx="15" fill="#0284C7"/>
+    <text x="90" y="380" font-family="system-ui" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">تحميل LAN</text>
+
+    <!-- Memory Challenge Mini Box -->
+    <rect x="25" y="440" width="510" height="150" rx="16" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+    <text x="510" y="470" font-family="system-ui" font-size="13" font-weight="bold" fill="#1C1917" text-anchor="end">تحدي الذاكرة الخفيف (يعمل أوفلاين)</text>
+    <circle cx="480" cy="520" r="22" fill="#FDF7E7" stroke="#EEDAA2"/>
+    <text x="480" y="526" font-family="system-ui" font-size="16" text-anchor="middle">⚡</text>
+    <circle cx="420" cy="520" r="22" fill="#D1FAE5" stroke="#A7F3D0"/>
+    <text x="420" y="526" font-family="system-ui" font-size="16" text-anchor="middle">🎯</text>
+    <circle cx="360" cy="520" r="22" fill="#F8F8F7" stroke="#E7E5E4"/>
+    <text x="360" y="526" font-family="system-ui" font-size="16" text-anchor="middle">🎮</text>
+    <circle cx="300" cy="520" r="22" fill="#F8F8F7" stroke="#E7E5E4"/>
+    <text x="300" y="526" font-family="system-ui" font-size="16" text-anchor="middle">🏆</text>
+
+    <!-- Column 2: Matches & Live HLS Stream (Width 570) -->
+    <g transform="translate(590, 0)">
+      <rect width="570" height="630" rx="24" fill="#ffffff" stroke="#E7E5E4" stroke-width="1"/>
+      <text x="540" y="40" font-family="system-ui" font-size="18" font-weight="bold" fill="#1C1917" text-anchor="end">بث المباريات المباشر HLS</text>
+      <text x="540" y="65" font-family="system-ui" font-size="12" fill="#57534E" text-anchor="end">مشغل عالي الدقة مع دعم PiP والتحكم بالجودة</text>
+
+      <!-- Video Player Frame -->
+      <rect x="25" y="90" width="520" height="290" rx="16" fill="#0F172A"/>
+      <!-- Stream Placeholder -->
+      <circle cx="285" cy="225" r="32" fill="#C59424"/>
+      <polygon points="278,212 298,225 278,238" fill="#ffffff"/>
+      <text x="285" y="290" font-family="system-ui" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">مشغل HLS المحلي (beIN &amp; SSC)</text>
+      <rect x="420" y="105" width="110" height="24" rx="12" fill="rgba(2,132,199,0.9)"/>
+      <text x="475" y="121" font-family="system-ui" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">● مباشر LAN</text>
+
+      <!-- Channel Schedule -->
+      <g transform="translate(25, 400)">
+        <text x="515" y="20" font-family="system-ui" font-size="13" font-weight="bold" fill="#1C1917" text-anchor="end">القنوات المجدولة للبث</text>
+        <rect y="35" width="520" height="50" rx="12" fill="#F8F8F7" stroke="#E7E5E4" stroke-width="1"/>
+        <text x="495" y="65" font-family="system-ui" font-size="12" font-weight="bold" fill="#1C1917" text-anchor="end">beIN Sports 1 HD • دوري أبطال أوروبا</text>
+        <rect x="20" y="47" width="80" height="24" rx="12" fill="#F1F5F9"/>
+        <text x="60" y="63" font-family="system-ui" font-size="10" fill="#64748B" text-anchor="middle">قيد الترخيص</text>
+
+        <rect y="95" width="520" height="50" rx="12" fill="#F8F8F7" stroke="#E7E5E4" stroke-width="1"/>
+        <text x="495" y="125" font-family="system-ui" font-size="12" font-weight="bold" fill="#1C1917" text-anchor="end">beIN Sports 2 HD • الدوري الإنجليزي</text>
+        <rect x="20" y="107" width="80" height="24" rx="12" fill="#F1F5F9"/>
+        <text x="60" y="123" font-family="system-ui" font-size="10" fill="#64748B" text-anchor="middle">قيد الترخيص</text>
+
+        <rect y="155" width="520" height="50" rx="12" fill="#F8F8F7" stroke="#E7E5E4" stroke-width="1"/>
+        <text x="495" y="185" font-family="system-ui" font-size="12" font-weight="bold" fill="#1C1917" text-anchor="end">SSC Sports 1 HD • دوري المحترفين والآسيوية</text>
+        <rect x="20" y="167" width="80" height="24" rx="12" fill="#F1F5F9"/>
+        <text x="60" y="183" font-family="system-ui" font-size="10" fill="#64748B" text-anchor="middle">قيد الترخيص</text>
+      </g>
+    </g>
+  </g>
+</svg>

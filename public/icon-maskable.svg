@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Full bleed ink background -->
+  <rect width="512" height="512" fill="#0B1220" />
+  <!-- Safe zone scaled to 75% centered -->
+  <g transform="translate(64, 64) scale(0.75)">
+    <path d="M 106 405 A 214 214 0 1 1 448 277" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" fill="none" />
+    <circle cx="448" cy="277" r="40" fill="#C6F24E" />
+    <path d="M 192 384 C 256 384 310 352 310 298 C 310 244 256 224 202 224 C 148 224 138 266 138 320 C 138 384 181 384 362 384" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M 202 224 L 202 106" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" />
+  </g>
+</svg>
