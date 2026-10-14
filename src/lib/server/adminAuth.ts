@@ -47,7 +47,30 @@ export async function verifyAdminRequest(req: NextRequest): Promise<AdminAuthRes
 
     // Check if custom claim is set OR email is in allowed admins list
     const hasAdminClaim = Boolean(decoded.admin || decoded.role === 'admin');
-    const isAllowedEmail = email && CONFIGURED_ADMIN_EMAILS.includes(email);
+    let isAllowedEmail = email && CONFIGURED_ADMIN_EMAILS.includes(email);
+
+    // Also check dynamic Firestore admin config
+    if (!isAllowedEmail && email) {
+      try {
+        const { getAdminFirestore } = await import('@/src/lib/server/firebaseAdmin');
+        const firestore = getAdminFirestore();
+        if (firestore) {
+          const doc = await firestore.collection('app_settings').doc('admin_config').get();
+          if (doc.exists) {
+            const data = doc.data();
+            const emails: string[] = Array.isArray(data?.adminEmails)
+              ? data.adminEmails.map((e: string) => String(e).toLowerCase())
+              : [];
+            const primary: string = (data?.primaryAdminEmail || '').toLowerCase();
+            if (emails.includes(email) || primary === email) {
+              isAllowedEmail = true;
+            }
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
 
     if (hasAdminClaim || isAllowedEmail) {
       return { isAdmin: true, uid: decoded.uid, email: decoded.email };
