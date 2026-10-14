@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>طلقة نت | المشغل المحلي للبث المباشر (LAN Player)</title>
+  <script src="./hls.light.min.js"></script>
+  <style>
+    :root {
+      --bg: #14100A;
+      --surface: #1E1A14;
+      --surface-2: #2B251D;
+      --border: #3A3227;
+      --gold: #D4AF37;
+      --gold-hover: #C59424;
+      --text: #FDFBF7;
+      --text-muted: #A8A196;
+      --red: #EF4444;
+      --blue: #0284C7;
+      --green: #10B981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .brand-badge {
+      background: var(--gold);
+      color: var(--bg);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .lan-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--green);
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .lan-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Main Container */
+    .container {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    /* Player Wrapper */
+    .player-card {
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* Error Overlay */
+    .overlay-message {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 12, 8, 0.92);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      z-index: 20;
+    }
+
+    .overlay-message.show {
+      display: flex;
+    }
+
+    .overlay-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .overlay-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .overlay-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 320px;
+      margin-bottom: 16px;
+    }
+
+    .btn-retry {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Controls Bar */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .channel-title-group h2 {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .channel-title-group p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--surface-2);
+      border-color: var(--gold);
+    }
+
+    /* Channel Selector Tabs */
+    .channels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .channel-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 12px;
+      text-align: right;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+
+    .channel-btn:hover {
+      background: var(--surface-2);
+    }
+
+    .channel-btn.active {
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.08);
+      box-shadow: 0 0 0 1px var(--gold);
+    }
+
+    .channel-btn-name {
+      font-size: 13px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .channel-btn-cat {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    /* Info Banner */
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hotspot-link {
+      color: var(--gold);
+      font-weight: bold;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+      .channels-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <a href="https://talqanet.vercel.app" class="brand">
+      <span class="brand-badge">طلقة</span>
+      <span>بث شبكة طلقة نت المباشر</span>
+    </a>
+    <span class="lan-badge">
+      <span class="lan-dot"></span>
+      بث محلي مجاني (LAN)
+    </span>
+  </header>
+
+  <main class="container">
+    <div class="player-card">
+      <video id="video" playsinline controls></video>
+
+      <div id="errorOverlay" class="overlay-message">
+        <div class="overlay-icon">📡</div>
+        <h3 class="overlay-title" id="errorTitle">تعذر تحميل البث</h3>
+        <p class="overlay-desc" id="errorDesc">
+          تأكد من أن جهازك متصل مباشرة بشبكة واي فاي «طلقة نت» (192.168.50.2). هذه الخدمة محلية مجانية بدون كرت أو إنترنت.
+        </p>
+        <button class="btn-retry" onclick="reloadStream()">إعادة المحاولة</button>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="channel-title-group">
+        <h2 id="currentChannelName">beIN Sports HD 1</h2>
+        <p id="currentChannelSub">بث مباشر فائق السرعة عبر سيرفر الشبكة الداخلي</p>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn" onclick="togglePiP()" id="pipBtn" title="نافذة عائمة">📺 نافذة عائمة</button>
+        <button class="btn" onclick="toggleFullscreen()" title="ملء الشاشة">⛶ ملء الشاشة</button>
+        <a href="https://talqanet.vercel.app/live" class="btn">العودة للتطبيق</a>
+      </div>
+    </div>
+
+    <div class="channels-grid">
+      <button class="channel-btn active" id="btn-bein1" onclick="switchChannel('bein1')">
+        <span class="channel-btn-name">beIN Sports HD 1</span>
+        <span class="channel-btn-cat">كرة قدم عربية وعالمية</span>
+      </button>
+
+      <button class="channel-btn" id="btn-bein2" onclick="switchChannel('bein2')">
+        <span class="channel-btn-name">beIN Sports HD 2</span>
+        <span class="channel-btn-cat">البطولات الأوروبية</span>
+      </button>
+
+      <button class="channel-btn" id="btn-ssc1" onclick="switchChannel('ssc1')">
+        <span class="channel-btn-name">SSC Sports 1 HD</span>
+        <span class="channel-btn-cat">دوري المحترفين والآسيوية</span>
+      </button>
+    </div>
+
+    <div class="info-card">
+      <div>
+        <strong>تستمتع بالمجان؟</strong> يمكنك استخدام البث والاستراحة بدون رصيد كرت. للدخول إلى الإنترنت وتصفح المواقع:
+      </div>
+      <a href="http://t.net" target="_blank" rel="noopener" class="hotspot-link">بوابة t.net ←</a>
+    </div>
+  </main>
+
+  <script>
+    const CHANNELS = {
+      bein1: {
+        name: 'beIN Sports HD 1',
+        cat: 'كرة قدم عربية وعالمية',
+        url: 'http://192.168.50.2:8888/live/bein1/index.m3u8',
+        altUrl: 'http://192.168.50.2:8888/live/bein1/'
+      },
+      bein2: {
+        name: 'beIN Sports HD 2',
+        cat: 'البطولات الأوروبية',
+        url: 'http://192.168.50.2:8888/live/bein2/index.m3u8',
+        altUrl: 'http://192.168.50.2:8888/live/bein2/'
+      },
+      ssc1: {
+        name: 'SSC Sports 1 HD',
+        cat: 'دوري المحترفين والآسيوية',
+        url: 'http://192.168.50.2:8888/live/ssc1/index.m3u8',
+        altUrl: 'http://192.168.50.2:8888/live/ssc1/'
+      }
+    };
+
+    let currentChId = 'bein1';
+    let hlsInstance = null;
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('errorOverlay');
+
+    function getParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    function switchChannel(chId) {
+      if (!CHANNELS[chId]) chId = 'bein1';
+      currentChId = chId;
+
+      // Update UI active buttons
+      document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('btn-' + chId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const ch = CHANNELS[chId];
+      document.getElementById('currentChannelName').textContent = ch.name;
+      document.getElementById('currentChannelSub').textContent = ch.cat + ' • بث شبكة طلقة نت الداخلي';
+
+      loadStream(ch.url);
+    }
+
+    function loadStream(url) {
+      overlay.classList.remove('show');
+
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        hlsInstance = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 30
+        });
+
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play().catch(() => {});
+        });
+
+        hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                overlay.classList.add('show');
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                hlsInstance.recoverMediaError();
+                break;
+              default:
+                overlay.classList.add('show');
+                hlsInstance.destroy();
+                break;
+            }
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // iOS Native HLS
+        video.src = url;
+        video.addEventListener('loadedmetadata', function () {
+          video.play().catch(() => {});
+        });
+        video.addEventListener('error', function () {
+          overlay.classList.add('show');
+        });
+      } else {
+        overlay.classList.add('show');
+      }
+    }
+
+    function reloadStream() {
+      const ch = CHANNELS[currentChId];
+      loadStream(ch.url);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        video.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    async function togglePiP() {
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else if (document.pictureInPictureEnabled) {
+          await video.requestPictureInPicture();
+        }
+      } catch (e) {}
+    }
+
+    // Initialize from URL parameter
+    window.addEventListener('DOMContentLoaded', () => {
+      const paramCh = getParam('ch');
+      switchChannel(paramCh || 'bein1');
+    });
+  </script>
+</body>
+</html>

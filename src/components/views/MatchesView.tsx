@@ -9,6 +9,7 @@ import { Tv, Radio, ShieldCheck, Wifi, Play, AlertCircle, Info, Calendar } from 
 import { Card } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
+import { HotspotBanner } from '@/src/components/ui/HotspotBanner';
 
 // Dynamic import for HLS Player with ssr: false to prevent SSR hydration issues
 const HlsVideoPlayer = dynamic(
@@ -62,6 +63,8 @@ export const MatchesView: React.FC = () => {
         <div className="space-y-2">
           <HlsVideoPlayer
             src={activeChannel.streamUrl}
+            httpsUrl={activeChannel.httpsUrl}
+            channelId={activeChannel.id}
             title={activeChannel.name}
             requiresLan={activeChannel.requiresLan}
           />
@@ -69,7 +72,7 @@ export const MatchesView: React.FC = () => {
             <span className="font-bold text-[#1C1917]">{activeChannel.name}</span>
             <span className="text-[11px] text-[#0284C7] flex items-center gap-1">
               <Wifi className="w-3 h-3" />
-              بث سيرفر LAN الداخلي
+              بث سيرفر LAN الداخلي المجاني
             </span>
           </div>
         </div>
@@ -94,6 +97,9 @@ export const MatchesView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Lightweight Hotspot Internet Access Entry Point */}
+      <HotspotBanner sourceContext="matches" />
 
       {/* Channel Lineup */}
       <div className="space-y-3">

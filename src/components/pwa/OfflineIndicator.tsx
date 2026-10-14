@@ -16,7 +16,7 @@ export const OfflineIndicator: React.FC = () => {
     >
       <div className="flex items-center gap-2">
         <WifiOff className="w-3.5 h-3.5 text-[#B45309] shrink-0" strokeWidth={1.75} />
-        <span>لا يوجد اتصال بالإنترنت — التصفح متاح بالبيانات المخزنة محلياً</span>
+        <span>تصفح أوفلاين — خدمات البث المباشر والاستراحة تعمل مجاناً عند الاتصال بواي فاي طلقة نت</span>
       </div>
       <span className="w-1.5 h-1.5 rounded-full bg-[#B45309] shrink-0" />
     </div>

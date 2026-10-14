@@ -13,20 +13,22 @@
 
 ---
 
-## 🟠 المرحلة 2: تهيئة Firebase ونشر قواعد الأمان
+## 🟠 المرحلة 2: تهيئة Firebase ونشر قواعد الأمان وتدفق المالك الأول
 
 - [ ] **نشر قواعد Firestore الأمنية (`firestore.rules`):**
   - تشغيل الأمر في الطرفية:
     ```bash
     firebase deploy --only firestore:rules --project talqanet-cf3e1
     ```
-  - التأكد من أن مجموعات `reward_vault` و`consumed_vouchers` محظور قراءتها من أي عميل مجهول.
-- [ ] **إنشاء حساب المشرف في Firebase Authentication:**
-  - الانتقال إلى: Firebase Console > Authentication > Users > Add User.
-  - إضافة البريد الإلكتروني للمشرف (مثل `admin@talqanet.com` أو `atheer.ye1@gmail.com`) مع كلمة مرور قوية.
+  - **ملاحظة أمنية بالغة الأهمية:** التسجيل بحسابات Google مفتوح للجميع في Firebase Auth لدعم دخول المشرفين، ولكن الحماية محكمة حصراً عبر Custom Claim `admin == true` في قواعد الأمان. المجموعات الخمس الحساسة (`reward_vault`, `consumed_vouchers`, `reward_claims`, `network_cards_ledger`, `loyalty_idempotency`, `admin_config`, `admins`) مقفلة تماماً `allow read, write: if false;` ولا يمكن لأي متصفح قراءتها أو الكتابة فيها.
+- [ ] **تسجيل دخول المالك الأول (Owner Bootstrap) فور النشر وقبل نشر الرابط للجمهور:**
+  - فور نشر التطبيق وقبل إرسال الرابط للمشتركين، افتح رابط الإدارة `/admin` في المتصفح.
+  - اضغط زر **«الدخول بحساب Google»** باستخدام حساب جوجل الخاص بالمالك.
+  - مسار الخادم `/api/admin/bootstrap` سيعتمد حسابك تلقائياً كـ **Owner** ويضبط لك صلاحية `admin: true` عبر Admin SDK في أول مطالبة، ويُغلق المسار برمز 409 لأي محاولات لاحقة.
+  - (اختياري إضافي): إذا كنت قد ضبطت `ADMIN_BOOTSTRAP_EMAIL` في متغيرات البيئة ببريدك المحدد، فلن يقبل النظام المطالبة إلا من هذا البريد تحديداً.
 - [ ] **توليد مفتاح حساب الخدمة (Firebase Service Account Key):**
   - من Firebase Console > Project Settings > Service accounts > Generate new private key.
-  - إضافة محتوى المفتاح في متغير البيئة `FIREBASE_SERVICE_ACCOUNT_KEY` في لوحة Vercel.
+  - إضافة محتوى المفتاح في متغير البيئة `FIREBASE_SERVICE_ACCOUNT_KEY` في لوحة Vercel لضمان عمل عمليات السيرفر الموثوقة.
 
 ---
 

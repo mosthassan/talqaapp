@@ -20,7 +20,6 @@ export const NETWORK_LINKS = {
   // Production App Domain
   app: {
     production: 'https://talqanet.vercel.app',
-    github: 'https://github.com/mosthassan/talqaNet2',
   },
 
   // Customer Care & Social Support
@@ -43,9 +42,10 @@ export const NETWORK_LINKS = {
     whatsappUrl: 'https://wa.me/967770446040',
   },
 
-  // Local Network Services (Configurable for Phase 2 - LAN only)
+  // Local Network Services (LAN only - Free service without card or internet)
   localServer: {
     mediaServer: 'http://192.168.50.2:8096',
+    lanPlayerUrl: 'http://192.168.50.2:8080/files/player.html',
     downloadsBase: 'http://192.168.50.2:8080/files/',
     downloads: {
       apk: 'http://192.168.50.2:8080/files/talqa-net.apk',
@@ -62,7 +62,7 @@ export const NETWORK_LINKS = {
 
   // Firebase Configuration Reference
   firebase: {
-    projectId: 'mikrotic-1a8ae',
+    projectId: 'talqanet-cf3e1',
   },
 } as const;
 

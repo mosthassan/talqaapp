@@ -80,6 +80,7 @@ export interface LiveChannel {
   id: string;
   name: string;
   streamUrl: string;
+  httpsUrl?: string;
   logo?: string;
   category: string;
   enabled: boolean;

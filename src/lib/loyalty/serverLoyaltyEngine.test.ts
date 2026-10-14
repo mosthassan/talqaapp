@@ -181,5 +181,83 @@ describe('Server Loyalty Engine - Logic & Cryptographic Integrity', () => {
         expect(result3.reason).toBe('invalid_cards');
       }
     });
+
+    it('returns out_of_stock without burning cards when vault inventory is empty', async () => {
+      // Import the in-memory store to simulate empty vault
+      const store = globalThis.__talqa_loyalty_store;
+      const originalVault = store ? [...store.prizeVault] : [];
+      if (store) {
+        store.prizeVault = []; // EMPTY VAULT
+      }
+
+      const freshBatch = [
+        'TLQ-200-112233',
+        'TLQ-200-445566',
+        'TLQ-200-778899',
+        'TLQ-500-101010',
+        'TLQ-500-202020',
+        'TLQ-500-303030',
+        'TLQ-500-404040',
+        'TLQ-1000-505050',
+        'TLQ-1000-606060',
+        'TLQ-1000-707070',
+      ];
+
+      const res = await executeRedeemServer({
+        cards: freshBatch,
+        idempotencyKey: `empty_vault_key_${Date.now()}`,
+        clientId: 'test-client-empty',
+      });
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.reason).toBe('out_of_stock');
+        expect(res.message).toContain('لم يتم حرق كروتك العشرة');
+      }
+
+      // Verify that cards were NOT burned
+      const cardCheck = await verifySingleCardServer('TLQ-200-112233');
+      expect(cardCheck.valid).toBe(true);
+      expect(cardCheck.reason).not.toBe('burned');
+
+      // Restore vault
+      if (store) {
+        store.prizeVault = originalVault;
+      }
+    });
+
+    it('fails safely with server_error in production mode when Firestore is unavailable', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      try {
+        (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+
+        const freshBatch = [
+          'TLQ-200-112233',
+          'TLQ-200-445566',
+          'TLQ-200-778899',
+          'TLQ-500-101010',
+          'TLQ-500-202020',
+          'TLQ-500-303030',
+          'TLQ-500-404040',
+          'TLQ-1000-505050',
+          'TLQ-1000-606060',
+          'TLQ-1000-707070',
+        ];
+
+        const res = await executeRedeemServer({
+          cards: freshBatch,
+          idempotencyKey: `prod_guard_key_${Date.now()}`,
+          clientId: 'test-client-prod',
+        });
+
+        expect(res.success).toBe(false);
+        if (!res.success) {
+          expect(res.reason).toBe('server_error');
+          expect(res.message).toContain('لم يتم حرق');
+        }
+      } finally {
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
+      }
+    });
   });
 });

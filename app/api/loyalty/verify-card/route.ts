@@ -3,14 +3,22 @@ import {
   verifySingleCardServer,
   verifyCardsBatchServer,
   checkRateLimit,
+  recordRateLimitFailure,
 } from '@/src/lib/loyalty/serverLoyaltyEngine';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
-    const rateCheck = checkRateLimit(`verify_${clientIp}`);
+    // Trusted IP extraction (Vercel & standard proxies)
+    const clientIp =
+      req.headers.get('x-real-ip')?.trim() ||
+      req.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      '127.0.0.1';
+
+    // Strict rate limit to prevent automated card oracle guessing
+    const rateCheck = checkRateLimit(`strict_verify_${clientIp}`);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -21,23 +29,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Add slight timing jitter to thwart timing attacks
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
     const body = await req.json().catch(() => ({}));
 
     // Single card verification
     if (typeof body.code === 'string') {
       const result = await verifySingleCardServer(body.code);
+      if (!result.valid) {
+        recordRateLimitFailure(`strict_verify_${clientIp}`);
+      }
       return NextResponse.json({
         success: true,
-        result,
+        result: {
+          valid: result.valid,
+          message: result.valid ? 'كرت مستهلك معتمد في شبكة طلقة نت ✓' : result.message,
+        },
       });
     }
 
     // Batch verification
     if (Array.isArray(body.codes)) {
       const batch = await verifyCardsBatchServer(body.codes);
+      if (!batch.allValid) {
+        recordRateLimitFailure(`strict_verify_${clientIp}`);
+      }
       return NextResponse.json({
         success: true,
-        batch,
+        batch: {
+          allValid: batch.allValid,
+          errorSummary: batch.errorSummary,
+          validCount: batch.results.filter((r) => r.valid).length,
+        },
       });
     }
 

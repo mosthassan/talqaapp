@@ -1,66 +1,73 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // المحتوى العام (الباقات، نقاط التوزيع، الإعلانات، القنوات، عناصر الاستراحة، الإعدادات)
+    // =========================================================
+    // المحتوى العام لشبكة طلقة نت (الباقات، الموزعين، الإعلانات، القنوات، الاستراحة)
+    // =========================================================
     // القراءة متاحة للجميع (مشتركي الشبكة أوفلاين وأونلاين)
-    // الكتابة محصورة بمسؤولي النظام المسجلين في Firebase Auth
+    // الكتابة محصورة حصراً بالمدير المعتمد الذي يحمل Custom Claim (admin: true)
     match /packages/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
     match /distributors/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
     match /announcements/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
     match /channels/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
     match /lounge_items/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
     match /app_settings/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
     // =========================================================
-    // مسابقة الولاء وصندوق الجوائز (Server-Authoritative)
+    // المجموعات الحساسة الخاصة بمسابقة الولاء والجوائز والمالك
     // =========================================================
-    // حماية صندوق الجوائز: ممنوع أي قراءة أو كتابة من متصفح العميل
-    // القراءة والكتابة محصورة بالسيرفر أو المشرف المصادق عليه
+    // حماية تامة ومطلقة: ممنوع أي قراءة أو كتابة من متصفح العميل مباشرة
+    // (حتى لو كان مسجلاً دخول بجوجل، لأن التسجيل العام متاح للجميع)
+    // الوصول يتم حصراً من السيرفر الموثوق عبر Firebase Admin SDK
     match /reward_vault/{rewardId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
 
-    // سجل الكروت المحروقة: لا يمكن للعميل قراءتها أو التلاعب بها
     match /consumed_vouchers/{voucherCode} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
 
-    // سجل العمليات والمطالبات الفائزة
     match /reward_claims/{claimId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
 
-    // قاعدة كروت شبكة طلقة للتحقق
     match /network_cards_ledger/{cardCode} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
 
-    // مفاتيح عدم التكرار (Idempotency)
     match /loyalty_idempotency/{key} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
+    }
+
+    match /admin_config/{doc} {
+      allow read, write: if false;
+    }
+
+    match /admins/{adminId} {
+      allow read, write: if false;
     }
   }
 }

@@ -4,12 +4,8 @@ import { NETWORK_LINKS } from '../config/links';
 /**
  * Initial Live HLS Channels
  * 
- * Strict Policy Notice:
- * In accordance with Phase 2 guidelines and Lovable roadmap instructions,
- * all 3 local channels are seeded with `enabled: false` pending formal verification
- * of licensed live streaming feeds by the network owner.
- * 
- * The UI gracefully handles 0 or 1+ enabled channels without fake scores or commentators.
+ * Local network service provided free of charge on MikroTik without requiring a card or active internet.
+ * Streams are hosted on the local server at 192.168.50.2:8888.
  */
 export const INITIAL_CHANNELS: LiveChannel[] = [
   {
@@ -17,26 +13,26 @@ export const INITIAL_CHANNELS: LiveChannel[] = [
     name: 'beIN Sports HD 1',
     streamUrl: NETWORK_LINKS.localServer.streams.bein1,
     category: 'كرة قدم عربية وعالمية',
-    enabled: false, // Disabled until licensed streaming confirmation
+    enabled: true, // Enabled for local LAN Wi-Fi network streaming
     requiresLan: true,
-    status: 'offline',
+    status: 'live',
   },
   {
     id: 'bein2',
     name: 'beIN Sports HD 2',
     streamUrl: NETWORK_LINKS.localServer.streams.bein2,
     category: 'البطولات الأوروبية',
-    enabled: false, // Disabled until licensed streaming confirmation
+    enabled: true, // Enabled for local LAN Wi-Fi network streaming
     requiresLan: true,
-    status: 'offline',
+    status: 'live',
   },
   {
     id: 'ssc1',
     name: 'SSC Sports 1 HD',
     streamUrl: NETWORK_LINKS.localServer.streams.ssc1,
     category: 'دوري المحترفين والآسيوية',
-    enabled: false, // Disabled until licensed streaming confirmation
+    enabled: true, // Enabled for local LAN Wi-Fi network streaming
     requiresLan: true,
-    status: 'offline',
+    status: 'live',
   },
 ];

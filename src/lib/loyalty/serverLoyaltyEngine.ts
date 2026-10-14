@@ -381,6 +381,15 @@ export async function executeRedeemServer(
 ): Promise<RedeemSuccessResponse | RedeemErrorResponse> {
   const { cards, idempotencyKey, clientId, ipHash } = params;
 
+  // 0. Production Database Availability Guard
+  if (process.env.NODE_ENV === 'production' && !getAdminFirestore()) {
+    return {
+      success: false,
+      reason: 'server_error',
+      message: 'خدمة مسابقة الانتماء غير متاحة حالياً (قاعدة البيانات السحابية غير متصلة). لم يتم حرق أو المساس بأي من كروتك، يُرجى المحاولة لاحقاً.',
+    };
+  }
+
   // 1. Idempotency Check
   const existingTx = await getIdempotencyRecord(idempotencyKey);
   if (existingTx) {
@@ -614,30 +623,13 @@ async function claimPrizeFromVault(tierId: string): Promise<LoyaltyPrizeVoucher 
     }
   }
 
-  // Memory store fallback
+  // Memory store fallback (used in test or dev only)
   const idx = memStore.prizeVault.findIndex((v) => v.tierId === tierId && !v.claimed);
   if (idx >= 0) {
     return memStore.prizeVault[idx] || null;
   }
 
-  // If in dev or test and inventory is low, generate one dynamically to ensure developer continuity
-  if (process.env.NODE_ENV !== 'production' || memStore.prizeVault.length === 0) {
-    const tier = memStore.tiers.find((t) => t.id === tierId) || DEFAULT_PRIZE_TIERS[0]!;
-    const newVoucher: LoyaltyPrizeVoucher = {
-      id: `pv_dyn_${Date.now()}_${crypto.randomInt(100, 999)}`,
-      tierId: tier.id,
-      tierName: tier.name,
-      code: `TLQ-GIFT-${tier.price}-${crypto.randomInt(100000, 999999)}`,
-      price: tier.price,
-      dataLabel: tier.dataLabel,
-      durationLabel: tier.durationLabel,
-      claimed: false,
-      createdAt: Date.now(),
-    };
-    memStore.prizeVault.push(newVoucher);
-    return newVoucher;
-  }
-
+  // Strictly no fake vouchers in production or test: return null to trigger out_of_stock safely
   return null;
 }
 

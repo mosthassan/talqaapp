@@ -19,6 +19,7 @@ import {
 import { Card } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
+import { HotspotBanner } from '@/src/components/ui/HotspotBanner';
 
 const memorySymbols = ['⚡', '🎮', '🏆', '🎯', '⚡', '🎮', '🏆', '🎯'];
 
@@ -93,6 +94,9 @@ export const LoungeView: React.FC = () => {
           خادم الوسائط وملفات الألعاب مستضافة محلياً في مأرب عبر <code>{NETWORK_LINKS.localServer.mediaServer}</code>. لفتح المحتوى، تأكد من اتصال هاتفك بشبكة واي فاي طلقة نت.
         </p>
       </div>
+
+      {/* Lightweight Hotspot Internet Access Entry Point */}
+      <HotspotBanner sourceContext="lounge" />
 
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">

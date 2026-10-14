@@ -6,7 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+    const clientIp =
+      req.headers.get('x-real-ip')?.trim() ||
+      req.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      '127.0.0.1';
     const body = await req.json().catch(() => ({}));
 
     const { cards, idempotencyKey, clientId } = body;

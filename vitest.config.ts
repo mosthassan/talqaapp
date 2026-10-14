@@ -10,6 +10,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    env: {
+      NODE_ENV: 'test',
+    },
     include: ['src/**/*.test.{ts,tsx}'],
     exclude: ['node_modules/**', 'legacy/**', 'lovable-ref/**'],
   },

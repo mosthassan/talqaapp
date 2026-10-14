@@ -14,22 +14,34 @@ import {
   AlertCircle,
   WifiOff,
   Settings,
+  ExternalLink,
 } from 'lucide-react';
+import { NETWORK_LINKS } from '@/src/config/links';
 
 interface HlsVideoPlayerProps {
   src: string;
+  httpsUrl?: string;
+  channelId?: string;
   poster?: string;
   title: string;
   requiresLan?: boolean;
+  lanPlayerUrl?: string;
   onClose?: () => void;
 }
 
 export default function HlsVideoPlayer({
   src,
+  httpsUrl,
+  channelId,
   poster,
   title,
   requiresLan = true,
+  lanPlayerUrl,
 }: HlsVideoPlayerProps) {
+  const effectiveSrc = httpsUrl || src;
+  const resolvedLanPlayerUrl =
+    lanPlayerUrl ||
+    `${NETWORK_LINKS.localServer.lanPlayerUrl}?ch=${channelId || 'bein1'}`;
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -77,7 +89,7 @@ export default function HlsVideoPlayer({
 
   const initHls = useCallback(() => {
     const video = videoRef.current;
-    if (!video || !src) return;
+    if (!video || !effectiveSrc) return;
 
     setErrorState(null);
     setIsBuffering(true);
@@ -94,7 +106,7 @@ export default function HlsVideoPlayer({
         backBufferLength: 30,
       });
 
-      hls.loadSource(src);
+      hls.loadSource(effectiveSrc);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
@@ -126,7 +138,7 @@ export default function HlsVideoPlayer({
               break;
             default:
               hls.destroy();
-              setErrorState('القناة متوقفة حالياً. يرجى إعادة المحاولة لاحقاً.');
+              setErrorState('القناة متوقفة حالياً أو تتطلب المشغل المحلي.');
               break;
           }
         }
@@ -135,7 +147,7 @@ export default function HlsVideoPlayer({
       hlsRef.current = hls;
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native Safari / iOS HLS support
-      video.src = src;
+      video.src = effectiveSrc;
       video.addEventListener('loadedmetadata', () => {
         setIsBuffering(false);
         video.play().catch(() => setIsPlaying(false));
@@ -150,7 +162,7 @@ export default function HlsVideoPlayer({
     } else {
       setErrorState('المتصفح لا يدعم تشغيل بث HLS المباشر');
     }
-  }, [src, requiresLan]);
+  }, [effectiveSrc, requiresLan]);
 
   useEffect(() => {
     initHls();
@@ -271,13 +283,24 @@ export default function HlsVideoPlayer({
           </div>
           <h4 className="text-white text-sm font-bold font-heading mb-1">{title}</h4>
           <p className="text-xs text-white/70 max-w-xs mb-4 leading-relaxed">{errorState}</p>
-          <button
-            onClick={initHls}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C59424] hover:bg-[#B58218] text-white text-xs font-bold transition-transform active:scale-95 shadow-sm"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            إعادة محاولة الاتصال
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <button
+              onClick={initHls}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C59424] hover:bg-[#B58218] text-white text-xs font-bold transition-transform active:scale-95 shadow-sm"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              إعادة محاولة الاتصال
+            </button>
+            <a
+              href={resolvedLanPlayerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-transform active:scale-95 border border-white/20"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-[#D4AF37]" />
+              تشغيل عبر المشغل المحلي (LAN Player)
+            </a>
+          </div>
         </div>
       )}
 

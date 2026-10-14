@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useSyncExternalStore, useState, type ReactNode } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -11,16 +11,11 @@ import {
   Gift,
   Gamepad2,
   Bell,
-  ArrowLeft,
   Download,
   X,
-  LogIn,
-  LogOut,
-  Wifi,
   Layers,
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/Button';
-import { useIsClient } from '@/src/hooks/useIsClient';
 
 interface NavItem {
   to: string;
@@ -38,107 +33,10 @@ const nav: NavItem[] = [
   { to: '/rewards', label: 'مكافآت الانتماء', icon: Gift, shortLabel: 'المكافآت' },
 ];
 
-let userListeners: Array<() => void> = [];
-function emitUserChange() {
-  for (const listener of userListeners) {
-    listener();
-  }
-}
-
-function readStoredUser(): { email: string } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const saved = localStorage.getItem('talqa_user');
-    return saved ? JSON.parse(saved) : null;
-  } catch {
-    return null;
-  }
-}
-
-const userStore = {
-  subscribe(listener: () => void) {
-    userListeners = [...userListeners, listener];
-    return () => {
-      userListeners = userListeners.filter((l) => l !== listener);
-    };
-  },
-  getSnapshot(): { email: string } | null {
-    return readStoredUser();
-  },
-  getServerSnapshot(): { email: string } | null {
-    return null;
-  },
-  setUser(userData: { email: string } | null) {
-    if (typeof window !== 'undefined') {
-      try {
-        if (userData) {
-          localStorage.setItem('talqa_user', JSON.stringify(userData));
-        } else {
-          localStorage.removeItem('talqa_user');
-        }
-      } catch {
-        // ignore
-      }
-      emitUserChange();
-    }
-  },
-};
-
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isClient = useIsClient();
-  const [auth, setAuth] = useState(false);
   const [notice, setNotice] = useState(false);
   const [install, setInstall] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [signup, setSignup] = useState(false);
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const rawUser = useSyncExternalStore(
-    userStore.subscribe,
-    userStore.getSnapshot,
-    userStore.getServerSnapshot
-  );
-  const user = isClient ? rawUser : null;
-
-  async function handleAuth(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setMessage('');
-
-    try {
-      if (!email.includes('@')) {
-        setMessage('يرجى إدخال بريد إلكتروني صحيح.');
-        setBusy(false);
-        return;
-      }
-      if (password.length < 6) {
-        setMessage('كلمة المرور يجب أن لا تقل عن 6 أحرف.');
-        setBusy(false);
-        return;
-      }
-
-      userStore.setUser({ email });
-      setAuth(false);
-      setEmail('');
-      setPassword('');
-    } catch {
-      setMessage('تعذر إتمام العملية، حاول مجددًا.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function handleGoogleLogin() {
-    userStore.setUser({ email: 'user@talqa-net.ye' });
-    setAuth(false);
-  }
-
-  function handleSignOut() {
-    userStore.setUser(null);
-  }
 
   const isCurrent = (path: string) => {
     if (path === '/') return pathname === '/';
@@ -185,14 +83,14 @@ export function Shell({ children }: { children: ReactNode }) {
             >
               <Bell />
             </Button>
-            <span className="header-divider" />
             <Button
               variant="outline"
-              className="account-button"
-              onClick={() => (user ? handleSignOut() : setAuth(true))}
+              size="sm"
+              className="text-xs hidden sm:flex items-center gap-1.5"
+              onClick={() => setInstall(true)}
             >
-              {user ? <LogOut /> : <LogIn />}
-              <span>{user ? 'خروج' : 'تسجيل الدخول'}</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>تثبيت التطبيق</span>
             </Button>
           </div>
         </div>
@@ -230,88 +128,6 @@ export function Shell({ children }: { children: ReactNode }) {
         })}
       </nav>
 
-      {/* Auth Modal */}
-      {auth && (
-        <div className="modal-backdrop" onClick={() => setAuth(false)}>
-          <section
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="تسجيل الدخول"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="modal-close"
-              onClick={() => setAuth(false)}
-              aria-label="إغلاق"
-            >
-              <X />
-            </Button>
-            <span className="brand-icon">
-              <Zap fill="currentColor" />
-            </span>
-            <h2>{signup ? 'انضم إلى طلقة نت' : 'أهلًا بعودتك'}</h2>
-            <p>انتماؤك يبدأ من هنا.</p>
-
-            <form onSubmit={handleAuth}>
-              <label>
-                البريد الإلكتروني
-                <input
-                  required
-                  type="email"
-                  dir="ltr"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                />
-              </label>
-              <label>
-                كلمة المرور
-                <input
-                  required
-                  minLength={6}
-                  type="password"
-                  dir="ltr"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </label>
-              {message && (
-                <p className="form-message" role="status">
-                  {message}
-                </p>
-              )}
-              <Button disabled={busy} className="w-full" type="submit">
-                {busy ? 'جارٍ الاتصال…' : signup ? 'إنشاء حساب' : 'تسجيل الدخول'}
-                <ArrowLeft />
-              </Button>
-            </form>
-
-            <div className="auth-separator">أو</div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-            >
-              المتابعة باستخدام Google
-            </Button>
-            <Button
-              variant="link"
-              className="w-full mt-3"
-              onClick={() => {
-                setSignup(!signup);
-                setMessage('');
-              }}
-            >
-              {signup ? 'لديك حساب؟ تسجيل الدخول' : 'جديد هنا؟ أنشئ حسابًا'}
-            </Button>
-          </section>
-        </div>
-      )}
-
       {/* Notice / Install Modal */}
       {(notice || install) && (
         <div
@@ -332,31 +148,49 @@ export function Shell({ children }: { children: ReactNode }) {
               variant="ghost"
               size="icon"
               className="modal-close"
-              aria-label="إغلاق"
               onClick={() => {
                 setNotice(false);
                 setInstall(false);
               }}
+              aria-label="إغلاق"
             >
               <X />
             </Button>
+
             {notice ? (
-              <Bell className="text-primary" />
+              <>
+                <span className="brand-icon">
+                  <Bell />
+                </span>
+                <h2>مركز الإشعارات</h2>
+                <p>
+                  أهلاً بك في شبكة طلقة نت بمأرب. كافة خدمات الاستراحة والبث المباشر
+                  تعمل مجاناً عند اتصالك بواي فاي الشبكة.
+                </p>
+                <div className="connection-note">
+                  <span className="status-dot" /> شبكة طلقة نت متصلة
+                </div>
+              </>
             ) : (
-              <Download className="text-primary" />
+              <>
+                <span className="brand-icon">
+                  <Download />
+                </span>
+                <h2>تثبيت التطبيق على جهازك</h2>
+                <p>
+                  يمكنك تثبيت تطبيق طلقة نت كتطبيق مستقل (PWA) على هاتفك الذكي
+                  ليعمل بسلاسة وسرعة فائقة حتى بدون اتصال بالإنترنت.
+                </p>
+                <Button
+                  className="w-full mt-2"
+                  onClick={() => {
+                    setInstall(false);
+                  }}
+                >
+                  فهمت ذلك
+                </Button>
+              </>
             )}
-            <h2>{notice ? 'كل جديد… هنا' : 'طلقة نت، أقرب لك'}</h2>
-            <p>
-              {notice
-                ? 'لا توجد إشعارات جديدة حاليًا. شبكة طلقة نت تعمل بكفاءة عالية وبسرعات فائقة.'
-                : 'من قائمة المتصفح اختر «إضافة إلى الشاشة الرئيسية». في آيفون، افتح التطبيق في Safari ثم اضغط زر المشاركة.'}
-            </p>
-            <div className="connection-note">
-              <Wifi size={16} />{' '}
-              {notice
-                ? 'سنعلن هنا عن البث والمكافآت عند توفرها.'
-                : 'أيقونة واحدة لعالم طلقة نت المتكامل.'}
-            </div>
           </section>
         </div>
       )}
