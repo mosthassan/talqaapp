@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 
 function subscribe(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
   window.addEventListener('online', callback);
   window.addEventListener('offline', callback);
   return () => {

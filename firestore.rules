@@ -69,5 +69,16 @@ service cloud.firestore {
     match /admins/{adminId} {
       allow read, write: if false;
     }
+
+    // محافظ كروت المشتركين: القراءة محصورة بصاحب الحساب والكتابة محصورة بالسيرفر
+    match /loyalty_wallets/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // فهرس تفرد كروت المحافظ عالمياً: محمي كلياً عبر السيرفر
+    match /loyalty_wallet_cards_index/{cardCode} {
+      allow read, write: if false;
+    }
   }
 }

@@ -124,6 +124,8 @@ class InMemLoyaltyStore {
   public tiers: LoyaltyPrizeTier[] = [...DEFAULT_PRIZE_TIERS];
   public config: LoyaltyContestConfig = { ...DEFAULT_CONTEST_CONFIG };
   public rateLimitTracker: Map<string, { count: number; resetAt: number; failures: number }> = new Map();
+  public userWallets: Map<string, Array<{ code: string; addedAt: number; price?: number; packageName?: string }>> = new Map();
+  public walletCardsIndex: Map<string, string> = new Map();
 
   constructor() {
     // Initialize seed data
@@ -341,6 +343,7 @@ export interface RedeemParams {
   idempotencyKey: string;
   clientId: string;
   ipHash?: string;
+  userId?: string;
 }
 
 export interface RedeemSuccessResponse {
@@ -368,7 +371,7 @@ export interface RedeemSuccessResponse {
 
 export interface RedeemErrorResponse {
   success: false;
-  reason: 'contest_disabled' | 'rate_limited' | 'invalid_cards' | 'already_burned' | 'out_of_stock' | 'server_error';
+  reason: 'contest_disabled' | 'rate_limited' | 'invalid_cards' | 'already_burned' | 'out_of_stock' | 'server_error' | 'wallet_incomplete';
   message: string;
   details?: Record<string, unknown>;
 }
@@ -509,6 +512,7 @@ export async function executeRedeemServer(
     dataLabel: wonTier.dataLabel,
     durationLabel: wonTier.durationLabel,
     ipHash,
+    userId: params.userId,
   };
   await saveTransactionRecord(transactionRecord);
 
@@ -848,3 +852,248 @@ export async function updateActivePrizeTiers(newTiers: LoyaltyPrizeTier[]): Prom
 
   return { success: true };
 }
+
+/* =========================================================================
+ * Card Stashing / User Loyalty Wallet (اجمع كروتك تدريجياً في حسابك)
+ * ========================================================================= */
+
+export interface UserWalletCard {
+  code: string;
+  addedAt: number;
+  price?: number;
+  packageName?: string;
+}
+
+export interface UserWalletState {
+  cards: UserWalletCard[];
+  count: number;
+}
+
+const WALLET_ERROR_MESSAGES: Record<string, string> = {
+  wallet_full: 'رصيدك مكتمل (10 كروت). افتح هديتك الآن!',
+  not_found: 'هذا الكرت غير مسجل في شبكة طلقة نت بمأرب.',
+  unused_fresh: 'هذا الكرت لم يُستهلك بعد، استخدمه أولاً.',
+  burned: 'هذا الكرت استُبدل سابقاً في المسابقة.',
+  already_mine: 'هذا الكرت موجود في رصيد كروتك مسبقاً.',
+  taken: 'هذا الكرت أضافه مشترك آخر إلى حسابه.',
+  invalid_format: 'صيغة الكرت غير صالحة (4 إلى 64 حرفاً).',
+  wallet_incomplete: 'تحتاج 10 كروت في رصيدك لفتح الهدية.',
+};
+
+export async function getUserWalletCards(userId: string): Promise<UserWalletState> {
+  const fs = getAdminFirestore();
+  if (fs) {
+    try {
+      const snap = await fs.collection('loyalty_wallets').doc(userId).get();
+      if (snap.exists) {
+        const data = snap.data();
+        const cards: UserWalletCard[] = Array.isArray(data?.cards) ? data.cards : [];
+        return { cards, count: cards.length };
+      }
+    } catch (err) {
+      console.warn('[serverLoyaltyEngine] getUserWalletCards Firestore error:', (err as Error).message);
+    }
+  }
+  const cards = memStore.userWallets.get(userId) || [];
+  return { cards, count: cards.length };
+}
+
+export async function addUserWalletCard(
+  userId: string,
+  rawCode: string
+): Promise<{ success: boolean; reason?: string; error?: string; count: number; cards?: UserWalletCard[] }> {
+  const clean = normalizeCardCode(rawCode);
+  if (clean.length < 4 || clean.length > 64) {
+    return {
+      success: false,
+      reason: 'invalid_format',
+      error: WALLET_ERROR_MESSAGES.invalid_format,
+      count: 0,
+    };
+  }
+
+  const fs = getAdminFirestore();
+  if (fs) {
+    try {
+      const walletRef = fs.collection('loyalty_wallets').doc(userId);
+      const indexRef = fs.collection('loyalty_wallet_cards_index').doc(clean);
+      const burnedRef = fs.collection('consumed_vouchers').doc(clean);
+      const ledgerRef = fs.collection('network_cards_ledger').doc(clean);
+
+      const result = await fs.runTransaction(async (t) => {
+        const [walletSnap, indexSnap, burnedSnap, ledgerSnap] = await Promise.all([
+          t.get(walletRef),
+          t.get(indexRef),
+          t.get(burnedRef),
+          t.get(ledgerRef),
+        ]);
+
+        const currentCards: UserWalletCard[] = walletSnap.exists ? (walletSnap.data()?.cards || []) : [];
+        const currentCount = currentCards.length;
+
+        if (currentCount >= 10) {
+          return { ok: false, reason: 'wallet_full', count: currentCount };
+        }
+
+        if (currentCards.some((c) => c.code === clean)) {
+          return { ok: false, reason: 'already_mine', count: currentCount };
+        }
+
+        if (indexSnap.exists) {
+          const indexData = indexSnap.data();
+          if (indexData?.userId && indexData.userId !== userId) {
+            return { ok: false, reason: 'taken', count: currentCount };
+          }
+        }
+
+        if (burnedSnap.exists) {
+          return { ok: false, reason: 'burned', count: currentCount };
+        }
+
+        let price = 200;
+        let packageName = 'كرت طلقة نت';
+
+        if (ledgerSnap.exists) {
+          const ledgerData = ledgerSnap.data() as NetworkCardRecord;
+          if (ledgerData.status === 'new' && (ledgerData.usedBytes || 0) === 0) {
+            return { ok: false, reason: 'unused_fresh', count: currentCount };
+          }
+          price = ledgerData.price || price;
+          packageName = ledgerData.packageName || packageName;
+        } else {
+          // Check memStore / seeds
+          const seedCard = memStore.networkCards.get(clean);
+          if (!seedCard) {
+            return { ok: false, reason: 'not_found', count: currentCount };
+          }
+          if (seedCard.status === 'new' && (seedCard.usedBytes || 0) === 0) {
+            return { ok: false, reason: 'unused_fresh', count: currentCount };
+          }
+          price = seedCard.price || price;
+          packageName = seedCard.packageName || packageName;
+        }
+
+        const newCard: UserWalletCard = {
+          code: clean,
+          addedAt: Date.now(),
+          price,
+          packageName,
+        };
+        const updatedCards = [...currentCards, newCard];
+
+        t.set(walletRef, { userId, cards: updatedCards, updatedAt: Date.now() }, { merge: true });
+        t.set(indexRef, { code: clean, userId, addedAt: Date.now() });
+
+        return { ok: true, count: updatedCards.length, cards: updatedCards };
+      });
+
+      if (!result.ok) {
+        return {
+          success: false,
+          reason: result.reason,
+          error: WALLET_ERROR_MESSAGES[result.reason || ''] || 'الكرت غير مقبول.',
+          count: result.count,
+        };
+      }
+
+      memStore.userWallets.set(userId, result.cards!);
+      memStore.walletCardsIndex.set(clean, userId);
+
+      return {
+        success: true,
+        count: result.count,
+        cards: result.cards,
+      };
+    } catch (err) {
+      console.warn('[serverLoyaltyEngine] addUserWalletCard Firestore error:', (err as Error).message);
+    }
+  }
+
+  // Memory fallback for test runs / offline dev
+  const currentCards = memStore.userWallets.get(userId) || [];
+  if (currentCards.length >= 10) {
+    return { success: false, reason: 'wallet_full', error: WALLET_ERROR_MESSAGES.wallet_full, count: currentCards.length };
+  }
+  if (currentCards.some((c) => c.code === clean)) {
+    return { success: false, reason: 'already_mine', error: WALLET_ERROR_MESSAGES.already_mine, count: currentCards.length };
+  }
+  const takenBy = memStore.walletCardsIndex.get(clean);
+  if (takenBy && takenBy !== userId) {
+    return { success: false, reason: 'taken', error: WALLET_ERROR_MESSAGES.taken, count: currentCards.length };
+  }
+  if (memStore.burnedCards.has(clean)) {
+    return { success: false, reason: 'burned', error: WALLET_ERROR_MESSAGES.burned, count: currentCards.length };
+  }
+  const cardRecord = memStore.networkCards.get(clean);
+  if (!cardRecord) {
+    return { success: false, reason: 'not_found', error: WALLET_ERROR_MESSAGES.not_found, count: currentCards.length };
+  }
+  if (cardRecord.status === 'new' && (cardRecord.usedBytes || 0) === 0) {
+    return { success: false, reason: 'unused_fresh', error: WALLET_ERROR_MESSAGES.unused_fresh, count: currentCards.length };
+  }
+
+  const newCard: UserWalletCard = {
+    code: clean,
+    addedAt: Date.now(),
+    price: cardRecord.price,
+    packageName: cardRecord.packageName,
+  };
+  const updatedCards = [...currentCards, newCard];
+  memStore.userWallets.set(userId, updatedCards);
+  memStore.walletCardsIndex.set(clean, userId);
+
+  return {
+    success: true,
+    count: updatedCards.length,
+    cards: updatedCards,
+  };
+}
+
+export async function redeemUserWalletCards(
+  userId: string,
+  idempotencyKey: string,
+  clientId: string,
+  ipHash?: string
+): Promise<RedeemSuccessResponse | RedeemErrorResponse> {
+  const wallet = await getUserWalletCards(userId);
+  if (wallet.count < 10) {
+    return {
+      success: false,
+      reason: 'wallet_incomplete',
+      message: WALLET_ERROR_MESSAGES.wallet_incomplete,
+    };
+  }
+
+  const codesToRedeem = wallet.cards.slice(0, 10).map((c) => c.code);
+
+  const result = await executeRedeemServer({
+    cards: codesToRedeem,
+    idempotencyKey,
+    clientId,
+    ipHash,
+    userId,
+  });
+
+  if (result.success) {
+    const fs = getAdminFirestore();
+    const remainingCards = wallet.cards.slice(10);
+    if (fs) {
+      try {
+        const batch = fs.batch();
+        const walletRef = fs.collection('loyalty_wallets').doc(userId);
+        batch.set(walletRef, { userId, cards: remainingCards, updatedAt: Date.now() }, { merge: true });
+        codesToRedeem.forEach((c) => {
+          batch.delete(fs.collection('loyalty_wallet_cards_index').doc(c));
+        });
+        await batch.commit();
+      } catch (err) {
+        console.warn('[serverLoyaltyEngine] redeemUserWalletCards cleanup error:', (err as Error).message);
+      }
+    }
+    memStore.userWallets.set(userId, remainingCards);
+    codesToRedeem.forEach((c) => memStore.walletCardsIndex.delete(c));
+  }
+
+  return result;
+}
+

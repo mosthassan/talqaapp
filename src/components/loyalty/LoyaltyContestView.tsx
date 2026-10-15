@@ -30,6 +30,7 @@ import { Card } from '@/src/components/ui/Card';
 import { Sheet } from '@/src/components/ui/Sheet';
 import { FortuneWheelCanvas } from '@/src/components/loyalty/FortuneWheelCanvas';
 import { QRScannerModal } from '@/src/components/loyalty/QRScannerModal';
+import { LoyaltyAccountPanel, type WalletRedeemWinResult } from '@/src/components/loyalty/LoyaltyAccountPanel';
 import { soundManager } from '@/src/lib/audio/soundManager';
 import { LoyaltyPrizeTier } from '@/src/types/loyalty';
 import { NETWORK_LINKS } from '@/src/config/links';
@@ -65,6 +66,9 @@ export function LoyaltyContestView() {
   const [contestEnabled, setContestEnabled] = useState(true);
   const [rulesText, setRulesText] = useState('');
   const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Participation Mode: 'wallet' (gradual stashing) vs 'direct' (instant 10-card submission)
+  const [participationMode, setParticipationMode] = useState<'wallet' | 'direct'>('wallet');
 
   // Cards State (10 slots)
   const [cards, setCards] = useState<CardSlot[]>(() =>
@@ -144,6 +148,36 @@ export function LoyaltyContestView() {
       return updated;
     });
   }, []);
+
+  // Called when subscriber triggers gift redemption from their Card Wallet
+  const handleWalletWin = useCallback(
+    (data: WalletRedeemWinResult) => {
+      const wonTierData = tiers.find((t) => t.id === data.wonTier?.id) || tiers[0] || data.wonTier;
+      setTargetTierId(wonTierData.id);
+      setIsSpinning(true);
+      setServerError(null);
+
+      const wonRecord: WonVoucherItem = {
+        transactionId: data.transactionId,
+        code: data.wonVoucher.code,
+        tierName: data.wonTier.name,
+        price: data.wonTier.price,
+        dataLabel: data.wonVoucher.dataLabel,
+        durationLabel: data.wonVoucher.durationLabel,
+        wonAt: data.timestamp || Date.now(),
+      };
+
+      setTimeout(() => {
+        setWonPrize({
+          tier: wonTierData,
+          code: data.wonVoucher.code,
+          transactionId: data.transactionId,
+        });
+        saveToWallet(wonRecord);
+      }, 4500);
+    },
+    [tiers, saveToWallet]
+  );
 
   // Real-time server verification of a card slot
   const verifyCardSlot = useCallback(async (index: number, rawCode: string) => {
@@ -575,17 +609,48 @@ export function LoyaltyContestView() {
         </div>
       </section>
 
-      {/* 10 Cards Submission Section */}
-      <section className="p-5 rounded-3xl bg-surface border border-line shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-black text-ink flex items-center gap-2">
-              <Ticket className="w-4 h-4 text-network" /> إدخال الكروت المستهلكة
-            </h2>
-            <p className="text-xs text-ink-2">
-              يمكنك كتابة الكروت أو لصقها دفعة واحدة أو مسح الـ QR بكاميرا هاتفك
-            </p>
-          </div>
+      {/* Mode Selector: Card Wallet (Stashing) vs Direct 10-Card Fast Draw */}
+      <div className="flex rounded-2xl bg-muted/60 p-1.5 border border-border gap-1.5">
+        <button
+          type="button"
+          onClick={() => setParticipationMode('wallet')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            participationMode === 'wallet'
+              ? 'bg-surface text-primary shadow-sm border border-border'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Ticket className="w-4 h-4" />
+          <span>محفظة كروتي (اجمع تدريجياً بحسابك)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setParticipationMode('direct')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            participationMode === 'direct'
+              ? 'bg-surface text-primary shadow-sm border border-border'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>السحب السريع (10 كروت دفعة واحدة)</span>
+        </button>
+      </div>
+
+      {participationMode === 'wallet' ? (
+        <LoyaltyAccountPanel onWin={handleWalletWin} busy={isSpinning} />
+      ) : (
+        /* 10 Cards Submission Section */
+        <section className="p-5 rounded-3xl bg-surface border border-line shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-black text-ink flex items-center gap-2">
+                <Ticket className="w-4 h-4 text-network" /> إدخال الكروت المستهلكة
+              </h2>
+              <p className="text-xs text-ink-2">
+                يمكنك كتابة الكروت أو لصقها دفعة واحدة أو مسح الـ QR بكاميرا هاتفك
+              </p>
+            </div>
           <div className="flex items-center gap-1.5">
             <Button
               size="sm"
@@ -723,6 +788,7 @@ export function LoyaltyContestView() {
           ))}
         </div>
       </section>
+      )}
 
       {/* QR Scanner Modal */}
       <QRScannerModal

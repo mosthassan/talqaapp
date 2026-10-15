@@ -5,6 +5,9 @@ import {
   verifySingleCardServer,
   verifyCardsBatchServer,
   executeRedeemServer,
+  getUserWalletCards,
+  addUserWalletCard,
+  redeemUserWalletCards,
   DEFAULT_PRIZE_TIERS,
 } from './serverLoyaltyEngine';
 import { LoyaltyPrizeTier } from '@/src/types/loyalty';
@@ -258,6 +261,120 @@ describe('Server Loyalty Engine - Logic & Cryptographic Integrity', () => {
       } finally {
         (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
       }
+    });
+  });
+
+  describe('User Card Stashing / Loyalty Wallet (اجمع كروتك تدريجياً في حسابك)', () => {
+    const testUid = 'user_test_stash_123';
+    const otherUid = 'user_test_other_456';
+
+    beforeEach(() => {
+      const store = globalThis.__talqa_loyalty_store;
+      if (store) {
+        store.networkCards.set('TLQ-STASH-CARD-01', {
+          code: 'TLQ-STASH-CARD-01',
+          packageName: 'كرت 500 ريال',
+          price: 500,
+          status: 'exhausted',
+          usedBytes: 2500 * 1024 * 1024,
+          importedAt: Date.now(),
+        });
+        for (let i = 1; i <= 10; i++) {
+          const code = `TLQ-WALLET-TEN-${String(i).padStart(2, '0')}`;
+          store.networkCards.set(code, {
+            code,
+            packageName: 'كرت 500 ريال',
+            price: 500,
+            status: 'exhausted',
+            usedBytes: 2500 * 1024 * 1024,
+            importedAt: Date.now(),
+          });
+        }
+      }
+    });
+
+    it('returns empty wallet for a brand new user', async () => {
+      const wallet = await getUserWalletCards('brand_new_user');
+      expect(wallet.count).toBe(0);
+      expect(wallet.cards).toEqual([]);
+    });
+
+    it('adds a valid card to user wallet successfully', async () => {
+      const res = await addUserWalletCard(testUid, 'TLQ-STASH-CARD-01');
+      expect(res.success).toBe(true);
+      expect(res.count).toBe(1);
+      expect(res.cards?.[0]?.code).toBe('TLQ-STASH-CARD-01');
+
+      const wallet = await getUserWalletCards(testUid);
+      expect(wallet.count).toBe(1);
+      expect(wallet.cards[0]?.code).toBe('TLQ-STASH-CARD-01');
+    });
+
+    it('rejects adding the same card twice to the same user (already_mine)', async () => {
+      const res = await addUserWalletCard(testUid, 'TLQ-STASH-CARD-01');
+      expect(res.success).toBe(false);
+      expect(res.reason).toBe('already_mine');
+      expect(res.error).toContain('موجود في رصيد كروتك مسبقاً');
+    });
+
+    it('rejects adding a card already stashed by another user (taken)', async () => {
+      const res = await addUserWalletCard(otherUid, 'TLQ-STASH-CARD-01');
+      expect(res.success).toBe(false);
+      expect(res.reason).toBe('taken');
+      expect(res.error).toContain('أضافه مشترك آخر');
+    });
+
+    it('rejects unknown cards not found in network ledger', async () => {
+      const res = await addUserWalletCard(testUid, 'UNKNOWN-CARD-999');
+      expect(res.success).toBe(false);
+      expect(res.reason).toBe('not_found');
+      expect(res.error).toContain('غير مسجل');
+    });
+
+    it('rejects invalid short card code format', async () => {
+      const res = await addUserWalletCard(testUid, 'AB');
+      expect(res.success).toBe(false);
+      expect(res.reason).toBe('invalid_format');
+    });
+
+    it('prevents redeeming wallet if card count is less than 10', async () => {
+      const res = await redeemUserWalletCards(testUid, 'test_idem_early', 'client_1');
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.reason).toBe('wallet_incomplete');
+        expect(res.message).toContain('تحتاج 10 كروت');
+      }
+    });
+
+    it('redeems 10 stashed cards atomically, awards genuine prize, and clears wallet', async () => {
+      const multiUserUid = 'user_with_ten_cards';
+      const tenCodes = Array.from({ length: 10 }, (_, i) => `TLQ-WALLET-TEN-${String(i + 1).padStart(2, '0')}`);
+
+      // Add all 10 cards to user's wallet
+      for (const code of tenCodes) {
+        const addRes = await addUserWalletCard(multiUserUid, code);
+        expect(addRes.success).toBe(true);
+      }
+
+      const walletBefore = await getUserWalletCards(multiUserUid);
+      expect(walletBefore.count).toBe(10);
+
+      // Redeem full wallet
+      const redeemRes = await redeemUserWalletCards(
+        multiUserUid,
+        `wallet_redeem_idem_${Date.now()}`,
+        'client_full_wallet'
+      );
+
+      expect(redeemRes.success).toBe(true);
+      if (redeemRes.success) {
+        expect(redeemRes.wonVoucher.code).toBeDefined();
+        expect(redeemRes.wonTier.name).toBeDefined();
+      }
+
+      // Verify user's wallet was cleared of redeemed cards
+      const walletAfter = await getUserWalletCards(multiUserUid);
+      expect(walletAfter.count).toBe(0);
     });
   });
 });

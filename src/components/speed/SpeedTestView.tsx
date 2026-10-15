@@ -53,6 +53,7 @@ function getServerHistorySnapshot(): SpeedTestResult[] {
 }
 
 function subscribeHistory(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
   window.addEventListener('storage', callback);
   window.addEventListener('talqa_speed_updated', callback);
   return () => {

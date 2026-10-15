@@ -55,6 +55,7 @@ export interface LoyaltyTransaction {
   dataLabel: string;
   durationLabel: string;
   ipHash?: string;
+  userId?: string;
 }
 
 export interface LoyaltyContestConfig {

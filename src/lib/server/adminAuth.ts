@@ -89,3 +89,84 @@ export async function verifyAdminRequest(req: NextRequest): Promise<AdminAuthRes
     };
   }
 }
+
+export interface UserAuthResult {
+  isAuthenticated: boolean;
+  uid?: string;
+  email?: string;
+  displayName?: string;
+  error?: string;
+  statusCode?: number;
+}
+
+/**
+ * Validates regular authenticated user tokens (Google Sign-in / Firebase Auth)
+ * Used for subscriber features like the Card Wallet.
+ */
+export async function verifyUserRequest(req: NextRequest): Promise<UserAuthResult> {
+  // Test-only mock bypass for unit tests
+  if (process.env.NODE_ENV === 'test') {
+    const testUserUid = req.headers.get('x-test-user-uid');
+    if (testUserUid) {
+      return {
+        isAuthenticated: true,
+        uid: testUserUid,
+        email: `${testUserUid}@talqanet.ye`,
+        displayName: 'مشترك تجريبي',
+      };
+    }
+  }
+
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {
+      isAuthenticated: false,
+      statusCode: 401,
+      error: 'يرجى تسجيل الدخول أولاً.',
+    };
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  if (!token) {
+    return {
+      isAuthenticated: false,
+      statusCode: 401,
+      error: 'رمز التوثيق فارغ.',
+    };
+  }
+
+  const adminAuth = getAdminAuth();
+  if (!adminAuth) {
+    // Development local fallback if admin credentials are not provided
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        isAuthenticated: true,
+        uid: 'dev-subscriber-local',
+        email: 'subscriber@talqanet.ye',
+        displayName: 'مشترك محلي',
+      };
+    }
+    return {
+      isAuthenticated: false,
+      statusCode: 503,
+      error: 'خدمة التوثيق غير متوفرة حالياً.',
+    };
+  }
+
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    return {
+      isAuthenticated: true,
+      uid: decoded.uid,
+      email: decoded.email,
+      displayName: decoded.name || decoded.email?.split('@')[0] || 'مشترك طلقة',
+    };
+  } catch (error) {
+    return {
+      isAuthenticated: false,
+      statusCode: 401,
+      error: `انتهت صلاحية جلسة الدخول، يرجى تسجيل الدخول مجدداً: ${(error as Error).message}`,
+    };
+  }
+}
+
